@@ -18,11 +18,12 @@ You will develop a navigation strategy, collect scan data at waypoints, assemble
 
 ## Learning Objectives
 
-1. Build a point cloud map from multiple scan captures
-2. Evaluate map accuracy by comparing mapped distances to physical measurements
-3. Assess how localization drift affects map consistency
-4. Apply your EKF/UKF implementation to real robot navigation
-5. Work with ROS2 services and visualization tools
+1. Implement a ROS2 service that captures a laser scan and pose estimate on demand
+2. Build a point cloud map by calling that service at each waypoint
+3. Evaluate map accuracy by comparing mapped distances to physical measurements
+4. Assess how localization drift affects map consistency
+5. Apply your EKF/UKF implementation to real robot navigation
+6. Work with ROS2 services and visualization tools
 
 ---
 
@@ -62,9 +63,58 @@ Poor localization causes scans to be placed incorrectly, resulting in:
 
 ## Project Instructions
 
-### Part 1: Navigation Strategy (Written Plan)
+### Part 1: Implement the Scan Capture Service
 
-Before data collection, develop a **written navigation strategy** including:
+The `scan_capture_pkg` package contains a stub ROS2 node (`scan_capture_node.py`) that you must implement. This node is the core of the project: it provides a service that, when called at each waypoint, captures the current laser scan and pose estimate, converts the scan to a `PointCloud2` in the robot's sensor frame, publishes it, and saves the data to disk for later analysis.
+
+**What to implement** (see the `TODO` comments in each file):
+
+1. **`scan_capture_pkg/scan_capture_pkg/scan_capture_node.py`** — The service node:
+   - Declare and read ROS2 parameters (`output_dir`, `pose_topic`, `scan_topic`)
+   - Subscribe to `/scan` (LaserScan, BEST_EFFORT QoS) and `/localization/pose` (PoseStamped)
+   - Subscribe to `/odom` (Odometry) as a fallback pose source if no localization pose is available
+   - Publish captured scans as `PointCloud2` on `/scan_capture/pointcloud`
+   - Advertise the `/scan_capture/capture` service using the `CaptureScan` service type
+   - Implement `laserscan_to_pointcloud2()`: convert polar range data to Cartesian XYZ, filter invalid ranges, and build a `PointCloud2` message in the scan's original frame
+   - Implement `save_capture()`: write pose (x, y, yaw) and scan metadata to a timestamped YAML file and save raw range data to a `.npy` file
+   - Implement `capture_callback()`: the service handler — verify data availability, publish the point cloud, save files, and populate the response
+
+2. **`scan_capture_pkg/srv/CaptureScan.srv`** — The service definition is already provided. The request carries `waypoint_id` and an optional `description`; the response returns `success`, a status `message`, the saved `filename`, and the `pose` at capture time.
+
+**Service interface summary:**
+
+```
+# Request
+int32  waypoint_id    # waypoint number (1-indexed)
+string description    # optional label
+---
+# Response
+bool              success    # True if capture succeeded
+string            message    # human-readable status
+string            filename   # path to the saved YAML file
+geometry_msgs/PoseStamped pose  # robot pose at capture time
+```
+
+**Testing your service before field work:**
+
+```bash
+# Terminal 1 — run the TurtleBot3 bringup (or a simulator)
+# Terminal 2 — launch your localization node
+# Terminal 3 — launch the capture service
+ros2 launch scan_capture_pkg scan_capture.launch.py
+
+# Terminal 4 — call the service manually to verify it works
+ros2 service call /scan_capture/capture scan_capture_pkg/srv/CaptureScan \
+  "{waypoint_id: 1, description: 'test'}"
+```
+
+A successful response should show `success: true`, a filename, and the captured pose. Verify that the YAML and `.npy` files appear in `data/captures/`.
+
+---
+
+### Part 2: Navigation Strategy (Written Plan)
+
+Before data collection, and after you have a working scan capture service, develop a **written navigation strategy** including:
 
 1. **Environment Selection**
    - Choose an area with clear landmarks (walls, corners, pillars)
@@ -84,7 +134,7 @@ Before data collection, develop a **written navigation strategy** including:
 
 Submit as `docs/navigation_strategy.md`.
 
-### Part 2: Ground Truth Measurements
+### Part 3: Ground Truth Measurements
 
 Before your data collection run:
 
@@ -100,15 +150,16 @@ Before your data collection run:
 
 4. **Record all measurements** in `config/measurements.yaml`
 
-### Part 3: Data Collection
+### Part 4: Data Collection
 
 1. **Launch TurtleBot3 bringup** (provides /scan, /odom, /imu)
 
 2. **Launch your localization node** (publishes /localization/pose)
    - Must publish `geometry_msgs/PoseStamped` to `/localization/pose`
    - You may use `ekf_node` or `ukf_node` from the `robot_localization` package (ROS2)
+   - If no localization node is available, the capture service will fall back to odometry
 
-3. **Launch the scan capture service**:
+3. **Launch your scan capture service** (the node you implemented in Part 1):
    ```bash
    ros2 launch scan_capture_pkg scan_capture.launch.py
    ```
@@ -138,13 +189,21 @@ Before your data collection run:
      ```
    - Take an RViz screenshot showing the current scan and pose
 
-### Part 4: Map Assembly and Evaluation
+### Part 5: Map Assembly and Evaluation
 
 After data collection:
 
 1. **Visualize all captured point clouds** in RViz
-   - Load each saved point cloud (from `data/captures/`)
-   - All clouds share the `odom` frame, so they should align
+   - Each capture saves a `.npy` range file and a YAML with the pose at capture time
+   - The easiest way to see all clouds together is to replay your bag file:
+     ```bash
+     ros2 bag play data/mapping_run --clock
+     ```
+   - In RViz, subscribe to `/scan_capture/pointcloud`; set the display to keep a history
+     of at least `N` messages (where N ≥ number of waypoints) so all captures remain visible
+   - Note: individual point clouds are saved in the laser sensor frame. They appear correctly
+     in RViz during bag replay because TF provides the transform from the laser frame to `odom`
+     at each capture timestamp
 
 2. **Evaluate distance accuracy** at each waypoint:
    - Use RViz's **Measure tool** (or Publish Point + manual calculation)
@@ -162,7 +221,7 @@ After data collection:
    - Gaps or overlaps in features
    - Drift accumulation visible in loop closure
 
-### Part 5: Analysis and Documentation
+### Part 6: Analysis and Documentation
 
 Complete your README with:
 
@@ -185,7 +244,7 @@ For each waypoint, describe:
 - Overall distance accuracy (mean/max error)
 - Sources of error (localization drift, measurement uncertainty)
 - Map consistency (do features align across scans?)
-- How would your Project 4 sensor calibration improve results?
+- How would your Project 5 sensor characterization (beam model) improve results?
 
 ---
 
@@ -216,15 +275,20 @@ Submit via your team's **class GitHub repository**.
 ### Repository Structure
 
 ```
-proj5-waypoint-mapping/
+proj6-waypoint-mapping/
 ├── README.md                    # Project report
 ├── docs/
 │   └── navigation_strategy.md  # Written strategy
-├── scan_capture_pkg/           # ROS2 package
+├── scan_capture_pkg/           # ROS2 package (you implement this)
+│   ├── scan_capture_pkg/
+│   │   ├── scan_capture_node.py  # Scan capture service node (implement me)
+│   │   └── keyboard_capture.py   # Keyboard trigger client (provided)
+│   ├── srv/
+│   │   └── CaptureScan.srv       # Service definition (provided)
 │   └── config/
 │       └── measurements.yaml   # Ground truth + results
 ├── data/
-│   ├── captures/               # Captured point clouds and poses
+│   ├── captures/               # Captured point clouds and poses (service output)
 │   └── mapping_run/            # Bag file (or link)
 └── figures/
     ├── rviz_screenshots/       # Screenshots at each waypoint
@@ -240,7 +304,7 @@ proj5-waypoint-mapping/
 #### 2. System Architecture (5 pts)
 - Data flow diagram
 - Your EKF/UKF configuration summary
-- How you would incorporate Project 4 sensor calibration
+- How you would incorporate Project 5 sensor characterization into the mapping pipeline
 
 #### 3. Map Accuracy Results (15 pts)
 - Distance accuracy table (all waypoints)
@@ -261,10 +325,10 @@ proj5-waypoint-mapping/
 - How to run the scan capture system
 - How to visualize the captured map
 
-### Code and Data (10 pts)
-- Completed `measurements.yaml` with ground truth and results
-- Bag file from your mapping run
-- Git history with contributions from both team members
+### Code and Data (15 pts)
+- **Scan capture service implementation** (10 pts): `scan_capture_node.py` fully implemented — parameters, subscribers, publisher, service handler, scan-to-point-cloud conversion, and file saving all working correctly
+- Completed `measurements.yaml` with ground truth and results (3 pts)
+- Bag file from your mapping run and git history with contributions from both team members (2 pts)
 
 ---
 
@@ -272,12 +336,13 @@ proj5-waypoint-mapping/
 
 | Component | Points |
 |-----------|--------|
+| Scan capture service implementation | 10 |
 | Navigation strategy summary | 5 |
 | System architecture documentation | 5 |
-| Map accuracy results (table, orientation, screenshots) | 15 |
+| Map accuracy results (table, orientation, screenshots) | 10 |
 | Discussion and analysis | 10 |
 | Usage instructions | 5 |
-| Code quality and data submission | 10 |
+| Data submission (measurements.yaml, bag file, git history) | 5 |
 | **Total** | **50** |
 
 ---
