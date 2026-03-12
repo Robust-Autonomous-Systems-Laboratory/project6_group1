@@ -42,34 +42,83 @@ class ScanCaptureNode(Node):
 
         # =====================================================================
         # Parameters
-        # TODO: Declare and read parameters:
-        #   - 'output_dir': directory to save captures (default: 'data/captures')
-        #   - 'pose_topic': topic for pose estimates (default: '/localization/pose')
-        #   - 'scan_topic': topic for laser scans (default: '/scan')
         # =====================================================================
+        self.declare_parameter('output_dir', 'data/captures')
+        self.declare_parameter('pose_topic', '/localization/pose')
+        self.declare_parameter('scan_topic', '/scan')
+
+        self.output_dir = self.get_parameter('output_dir').get_parameter_value().string_value
+        self.pose_topic = self.get_parameter('pose_topic').get_parameter_value().string_value
+        self.scan_topic = self.get_parameter('scan_topic').get_parameter_value().string_value
+
+        os.makedirs(self.output_dir, exist_ok=True)
 
         # =====================================================================
         # State variables
-        # TODO: Initialize variables to hold the latest scan and pose messages,
-        #       and a counter for the number of captures taken
         # =====================================================================
+        self.latest_scan = None
+        self.latest_pose = None
+        self.capture_count = 0
+
+        # =====================================================================
+        # QoS
+        # =====================================================================
+        scan_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        default_qos = 10
 
         # =====================================================================
         # Subscribers
-        # TODO: Subscribe to the scan topic (use BEST_EFFORT QoS) and pose topic.
-        #       Also subscribe to /odom as a fallback pose source.
         # =====================================================================
+        self.scan_sub = self.create_subscription(
+            LaserScan,
+            self.scan_topic,
+            self.scan_callback,
+            scan_qos
+        )
+
+        self.pose_sub = self.create_subscription(
+            PoseStamped,
+            self.pose_topic,
+            self.pose_callback,
+            default_qos
+        )
+
+        self.odom_sub = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            default_qos
+        )
 
         # =====================================================================
         # Publishers
-        # TODO: Publish captured scans as PointCloud2 on /scan_capture/pointcloud
         # =====================================================================
+        self.pc_pub = self.create_publisher(
+            PointCloud2,
+            '/scan_capture/pointcloud',
+            10
+        )
 
         # =====================================================================
         # Service
-        # TODO: Create a service server for /scan_capture/capture using the
-        #       CaptureScan service type
         # =====================================================================
+        self.capture_srv = self.create_service(
+            CaptureScan,
+            '/scan_capture/capture',
+            self.capture_callback
+        )
+
+        self.get_logger().info('Scan Capture Node started')
+        self.get_logger().info(f'  scan_topic: {self.scan_topic}')
+        self.get_logger().info(f'  pose_topic: {self.pose_topic}')
+        self.get_logger().info(f'  output_dir: {self.output_dir}')
+
+
 
         self.get_logger().info('Scan Capture Node started (stub - not yet implemented)')
 
