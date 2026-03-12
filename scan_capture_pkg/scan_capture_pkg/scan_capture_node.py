@@ -122,32 +122,57 @@ class ScanCaptureNode(Node):
         self.get_logger().info('Scan Capture Node started (stub - not yet implemented)')
 
     def scan_callback(self, msg: LaserScan):
-        """Store the latest laser scan."""
-        # TODO: Save the incoming scan message to a member variable
-        pass
+        self.latest_scan = msg
 
     def pose_callback(self, msg: PoseStamped):
-        """Store the latest pose estimate."""
-        # TODO: Save the incoming pose message to a member variable
-        pass
+        self.latest_pose = msg
 
     def odom_callback(self, msg: Odometry):
-        """Fallback: use odometry pose if no localization pose is available."""
-        # TODO: If no pose has been received yet, convert the Odometry message
-        #       to a PoseStamped and store it
-        pass
+        if self.latest_pose is None:
+            pose_msg = PoseStamped()
+            pose_msg.header = msg.header
+            pose_msg.pose = msg.pose.pose
+            self.latest_pose = pose_msg
 
     def laserscan_to_pointcloud2(self, scan: LaserScan) -> PointCloud2:
-        """
-        Convert a LaserScan message to PointCloud2.
+       
+        ranges = np.array(scan.ranges, dtype=np.float32)
 
-        TODO: Implement the conversion:
-        1. Compute Cartesian (x, y) coordinates from range and angle data
-        2. Filter out invalid ranges (outside [range_min, range_max] or non-finite)
-        3. Build and return a PointCloud2 message with XYZ float32 fields
-           in the same frame as the input scan
-        """
-        raise NotImplementedError('laserscan_to_pointcloud2 not yet implemented')
+        angles = scan.angle_min + np.arange(len(ranges), dtype=np.float32) * scan.angle_increment
+
+        valid = (
+            np.isfinite(ranges) &
+            (ranges >= scan.range_min) &
+            (ranges <= scan.range_max)
+        )
+
+        valid_ranges = ranges[valid]
+        valid_angles = angles[valid]
+
+        x = valid_ranges * np.cos(valid_angles)
+        y = valid_ranges * np.sin(valid_angles)
+        z = np.zeros_like(x, dtype=np.float32)
+
+        points = np.stack((x, y, z), axis=1).astype(np.float32)
+        data = points.tobytes()
+
+        msg = PointCloud2()
+        msg.header = scan.header
+        msg.height = 1
+        msg.width = points.shape[0]
+        msg.fields = [
+            PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
+        ]
+        msg.is_bigendian = False
+        msg.point_step = 12  # 3 float32 values
+        msg.row_step = msg.point_step * msg.width
+        msg.is_dense = True
+        msg.data = data
+
+        return msg
+
 
     def save_capture(self, waypoint_id: int, description: str,
                      scan: LaserScan, pose: PoseStamped) -> str:
