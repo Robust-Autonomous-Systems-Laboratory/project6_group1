@@ -16,7 +16,7 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 from sensor_msgs.msg import LaserScan, PointCloud2, PointField
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 
 from scan_capture_pkg.srv import CaptureScan
@@ -24,7 +24,7 @@ from scan_capture_pkg.srv import CaptureScan
 import numpy as np
 import os
 import yaml
-
+import math
 
 class ScanCaptureNode(Node):
     """
@@ -173,6 +173,13 @@ class ScanCaptureNode(Node):
 
         return msg
 
+    def quaternion_to_yaw(self, quaternion : Quaternion) -> float:
+       w = quaternion.w
+       x = quaternion.x
+       y = quaternion.y
+       z = quaternion.z
+       yaw = math.atan2(2*(w*z + x*y), 1-2*(y**2 +  z**2))
+       return yaw
 
     def save_capture(self, waypoint_id: int, description: str,
                      scan: LaserScan, pose: PoseStamped) -> str:
@@ -185,7 +192,23 @@ class ScanCaptureNode(Node):
         3. Save raw range data to a .npy file alongside the YAML
         4. Return the path to the saved YAML file
         """
-        raise NotImplementedError('save_capture not yet implemented')
+        file_name = f"scan_{waypoint_id}"
+        data = {
+                'x' : pose.pose.position.x,
+                'y' : pose.pose.position.y,
+                'yaw' : self.quaternion_to_yaw(pose.pose.quaternion),
+                'angle_min' : scan.angle_min,
+                'angle_max' : scan.angle_max,
+                'angle_increment' : scan.angle_increment,
+                'range_min' : scan.range_min,
+                'range_max' : scan.range_max,
+                'time_increment' : scan.time_increment,
+                'scan_time' : scan.scan_time,
+                }
+        with open(f"{file_name}.yaml", 'w') as yaml_file:
+            yaml.dump(data, yaml_file)
+        np.save(f"{file_name}.npy", scan.ranges)
+        
 
     def capture_callback(self, request, response):
         """
