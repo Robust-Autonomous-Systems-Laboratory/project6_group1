@@ -40,7 +40,7 @@ def generate_launch_description():
     # Scan capture service node
     scan_capture_node = Node(
         package='scan_capture_pkg',
-        executable='scan_capture_node.py',
+        executable='scan_capture_node',
         name='scan_capture_node',
         output='screen',
         parameters=[{
