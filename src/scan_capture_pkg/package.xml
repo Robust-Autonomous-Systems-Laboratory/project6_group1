@@ -6,6 +6,11 @@
 <description>TODO: Package description</description>
 <maintainer email="mmunoria@mtu.edu">vboxuser</maintainer>
 <license>TODO: License declaration</license>
+<exec_depend>rclpy</exec_depend>
+<exec_depend>sensor_msgs</exec_depend>
+<exec_depend>geometry_msgs</exec_depend>
+<exec_depend>nav_msgs</exec_depend>
+<exec_depend>interfaces_pkg</exec_depend>
 <test_depend>ament_copyright</test_depend>
 <test_depend>ament_flake8</test_depend>
 <test_depend>ament_pep257</test_depend>

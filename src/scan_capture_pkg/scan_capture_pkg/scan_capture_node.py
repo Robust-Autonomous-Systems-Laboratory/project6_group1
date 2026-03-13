@@ -19,7 +19,7 @@ from sensor_msgs.msg import LaserScan, PointCloud2, PointField
 from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 
-from scan_capture_pkg.srv import CaptureScan
+from interfaces_pkg.srv import CaptureScan
 
 import numpy as np
 import os
