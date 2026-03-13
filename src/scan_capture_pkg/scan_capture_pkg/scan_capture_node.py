@@ -208,6 +208,7 @@ class ScanCaptureNode(Node):
         with open(f"{file_name}.yaml", 'w') as yaml_file:
             yaml.dump(data, yaml_file)
         np.save(f"{file_name}.npy", scan.ranges)
+        return file_name
         
 
     def capture_callback(self, request, response):
@@ -221,10 +222,28 @@ class ScanCaptureNode(Node):
         3. Save the scan and pose using save_capture()
         4. Populate and return the response (success, message, filename, pose)
         """
-        response.success = False
-        response.message = 'Not yet implemented'
-        response.filename = ''
-        return response
+        if self.latest_scan is None:
+            response.success = False
+            response.message = 'Laser Scan not recieved!'
+            response.filename = ''
+            return response
+        if self.latest_pose is None:
+            response.success = False
+            response.message = 'Pose not recieved!'
+            response.filename = ''
+            return response
+        # Convert the scan to PointCloud2 and publish it
+        point_cloud = self.laserscan_to_pointcloud2(self.latest_scan)
+        self.pc_pub.publish(point_cloud)
+        # Save the scan and pose using save_capture()
+        file_name = self.save_capture(self.capture_count, request.description, self.latest_scan, self.latest_pose)
+        response.success = True
+        response.message = 'Scan captured successfully'
+        response.filename = file_name
+        response.pose = self.latest_pose
+        self.capture_count += 1
+        return
+
 
 
 def main(args=None):
