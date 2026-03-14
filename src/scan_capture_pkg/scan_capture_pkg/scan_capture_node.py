@@ -14,7 +14,7 @@ Project: 6 - Waypoint Mapping
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
-
+from datetime import datetime
 from sensor_msgs.msg import LaserScan, PointCloud2, PointField
 from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
@@ -119,8 +119,6 @@ class ScanCaptureNode(Node):
 
 
 
-        self.get_logger().info('Scan Capture Node started (stub - not yet implemented)')
-
     def scan_callback(self, msg: LaserScan):
         self.latest_scan = msg
 
@@ -180,69 +178,112 @@ class ScanCaptureNode(Node):
        z = quaternion.z
        yaw = math.atan2(2*(w*z + x*y), 1-2*(y**2 +  z**2))
        return yaw
+    
 
     def save_capture(self, waypoint_id: int, description: str,
                      scan: LaserScan, pose: PoseStamped) -> str:
         """
         Save captured scan and pose to files.
 
-        TODO: Implement file saving:
         1. Generate a timestamped filename using waypoint_id
         2. Save pose data (x, y, yaw) and scan metadata to a YAML file
         3. Save raw range data to a .npy file alongside the YAML
         4. Return the path to the saved YAML file
         """
-        file_name = f"scan_{waypoint_id}"
-        data = {
-                'x' : pose.pose.position.x,
-                'y' : pose.pose.position.y,
-                'yaw' : self.quaternion_to_yaw(pose.pose.quaternion),
-                'angle_min' : scan.angle_min,
-                'angle_max' : scan.angle_max,
-                'angle_increment' : scan.angle_increment,
-                'range_min' : scan.range_min,
-                'range_max' : scan.range_max,
-                'time_increment' : scan.time_increment,
-                'scan_time' : scan.scan_time,
-                }
-        with open(f"{file_name}.yaml", 'w') as yaml_file:
-            yaml.dump(data, yaml_file)
-        np.save(f"{file_name}.npy", scan.ranges)
-        return file_name
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        base_name = f'waypoint_{waypoint_id:03d}_{timestamp}'
+
+        yaml_path = os.path.join(self.output_dir, f'{base_name}.yaml')
+        npy_path = os.path.join(self.output_dir, f'{base_name}.npy')
+
+        px = float(pose.pose.position.x)
+        py = float(pose.pose.position.y)
+        yaw = float(self.quaternion_to_yaw(pose.pose.orientation))
+
+        ranges = np.array(scan.ranges, dtype=np.float32)
+        np.save(npy_path, ranges)
+
+        metadata = {
+            'waypoint_id': int(waypoint_id),
+            'description': str(description),
+            'timestamp': timestamp,
+            'pose': {
+                'frame_id': pose.header.frame_id,
+                'x': px,
+                'y': py,
+                'yaw': yaw,
+                'qx': float(pose.pose.orientation.x),
+                'qy': float(pose.pose.orientation.y),
+                'qz': float(pose.pose.orientation.z),
+                'qw': float(pose.pose.orientation.w),
+            },
+            'scan': {
+                'frame_id': scan.header.frame_id,
+                'angle_min': float(scan.angle_min),
+                'angle_max': float(scan.angle_max),
+                'angle_increment': float(scan.angle_increment),
+                'time_increment': float(scan.time_increment),
+                'scan_time': float(scan.scan_time),
+                'range_min': float(scan.range_min),
+                'range_max': float(scan.range_max),
+                'num_ranges': int(len(scan.ranges)),
+                'ranges_file': os.path.basename(npy_path),
+            }
+        }
+
+        with open(yaml_path, 'w', encoding='utf-8') as f:
+            yaml.safe_dump(metadata, f, sort_keys=False)
+
+        return yaml_path
         
 
     def capture_callback(self, request, response):
         """
         Service callback: capture the current scan and pose.
-
-        TODO: Implement the service handler:
-        1. Check that latest scan and pose data are available; return a
-           failure response with an informative message if either is missing
-        2. Convert the scan to PointCloud2 and publish it
-        3. Save the scan and pose using save_capture()
-        4. Populate and return the response (success, message, filename, pose)
         """
         if self.latest_scan is None:
             response.success = False
-            response.message = 'Laser Scan not recieved!'
+            response.message = 'No laser scan received yet.'
             response.filename = ''
             return response
+
         if self.latest_pose is None:
             response.success = False
-            response.message = 'Pose not recieved!'
+            response.message = 'No pose estimate received yet.'
             response.filename = ''
             return response
-        # Convert the scan to PointCloud2 and publish it
-        point_cloud = self.laserscan_to_pointcloud2(self.latest_scan)
-        self.pc_pub.publish(point_cloud)
-        # Save the scan and pose using save_capture()
-        file_name = self.save_capture(self.capture_count, request.description, self.latest_scan, self.latest_pose)
-        response.success = True
-        response.message = 'Scan captured successfully'
-        response.filename = file_name
-        response.pose = self.latest_pose
-        self.capture_count += 1
-        return
+
+        try:
+            pointcloud_msg = self.laserscan_to_pointcloud2(self.latest_scan)
+            self.pc_pub.publish(pointcloud_msg)
+
+            saved_yaml = self.save_capture(
+                request.waypoint_id,
+                request.description,
+                self.latest_scan,
+                self.latest_pose
+            )
+
+            self.capture_count += 1
+
+            response.success = True
+            response.message = (
+                f'Capture successful for waypoint {request.waypoint_id}. '
+                f'Saved to {saved_yaml}'
+            )
+            response.filename = saved_yaml
+
+            # Assuming the service response has a PoseStamped field named `pose`
+            response.pose = self.latest_pose
+            self.get_logger().info(response.message)
+
+        except Exception as e:
+            response.success = False
+            response.message = f'Capture failed: {str(e)}'
+            response.filename = ''
+            self.get_logger().error(response.message)
+
+        return response
 
 
 

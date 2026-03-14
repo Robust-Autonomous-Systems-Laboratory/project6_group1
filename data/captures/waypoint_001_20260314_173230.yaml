@@ -1,0 +1,23 @@
+waypoint_id: 1
+description: first waypoint
+timestamp: '20260314_173230'
+pose:
+  frame_id: odom
+  x: -0.011673682940763012
+  y: -0.018980988402185758
+  yaw: 0.010423786356113851
+  qx: 0.0
+  qy: 0.0
+  qz: 0.005211869582258495
+  qw: 0.9999864181154949
+scan:
+  frame_id: base_scan
+  angle_min: 0.027239693328738213
+  angle_max: 6.2810959815979
+  angle_increment: 0.02857784554362297
+  time_increment: 0.00043682128307409585
+  scan_time: 0.09559214115142822
+  range_min: 0.0
+  range_max: 100.0
+  num_ranges: 219
+  ranges_file: waypoint_001_20260314_173230.npy
