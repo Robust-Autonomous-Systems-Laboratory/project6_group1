@@ -101,11 +101,10 @@ geometry_msgs/PoseStamped pose  # robot pose at capture time
 # Terminal 1 — run the TurtleBot3 bringup (or a simulator)
 # Terminal 2 — launch your localization node
 # Terminal 3 — launch the capture service
-ros2 launch scan_capture_pkg scan_capture.launch.py
+os2 launch scan_capture_pkg scan_capture.launch.py
 
 # Terminal 4 — call the service manually to verify it works
-ros2 service call /scan_capture/capture scan_capture_pkg/srv/CaptureScan \
-  "{waypoint_id: 1, description: 'test'}"
+ros2 service call /scan_capture/capture interfaces_pkg/srv/CaptureScan "{waypoint_id: 1, description: 'first waypoint'}"
 ```
 
 A successful response should show `success: true`, a filename, and the captured pose. Verify that the YAML and `.npy` files appear in `data/captures/`.

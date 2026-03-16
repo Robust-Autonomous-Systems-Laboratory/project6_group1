@@ -1,8 +1,8 @@
 # Navigation and Measurement Strategy
 
 ## Team Members
-- Member 1: [Name]
-- Member 2: [Name]
+- Member 1: Progress Munoriarwa
+- Member 2: Reid Beckes
 
 ---
 
