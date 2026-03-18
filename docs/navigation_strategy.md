@@ -18,12 +18,14 @@
 Example:
     +------------------+
     |                  |
-    |   [P]            |  P = Pillar
     |                  |
-    |  1 ----> 2       |  1-5 = Waypoints
-    |          |       |  Arrows = Path
-    |          v       |
-    |  5 <---- 3 -> 4  |
+    |  | - 3 <-|       |  B = Bin
+    |  |       |       |
+    |  v       |       |
+    |  4   B   2       |  1-5 = Waypoints
+    |  |       ^       |  Arrows = Path
+    |  |       |       |
+    |  ----5-> 1       |
     |                  |
     +------------------+
          North Wall
@@ -33,8 +35,8 @@ Example:
 | ID | Landmark | Location | Notes |
 |----|----------|----------|-------|
 | A  | North wall | North side | Flat surface, good for distance measurement |
-| B  | Pillar | Center-left | Clear corner visible to LiDAR |
-| C  | ... | ... | ... |
+| B  | Recycle Bin | Center |  Part of it is prominent in all scans |
+| C  | East Wall | East side | Flat surface but not all of it may be visible at every wayppoint |
 
 ---
 
@@ -42,19 +44,19 @@ Example:
 
 ### Waypoint Layout
 
-| Waypoint | Position (x, y) | Landmark to Measure | Measurement Direction |
+| Waypoint | Position (x, y) (cm) | Landmark to Measure | Measurement Direction |
 |----------|-----------------|---------------------|----------------------|
-| 1 (Start)| (0.0, 0.0) | North wall | Straight ahead (0°) |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| 1 (Start)| (0, 0) | North wall, Recycle Bin | South (0°) |
+| 2 | (179, 0) | Recycle Bin | South (0°) |
+| 3 | (343, 174) | Recycle Bin | East (90°) |
+| 4 | (174, 285) | Recycle Bin | North (180°) |
+| 5 | (0, 131) | North wall, Recycle Bin | West (270°) |
 
 ### Path Statistics
-- Number of waypoints: 
-- Total path length: 
-- Loop closure planned: Yes / No
-- Estimated navigation time: 
+- Number of waypoints: 5
+- Total path length: 12.56m
+- Loop closure planned: Yes
+- Estimated navigation time: 30 min
 
 ---
 
@@ -129,10 +131,10 @@ Options:
 
 | Task | Team Member |
 |------|-------------|
-| Robot pilot | |
-| RViz monitoring / screenshots | |
-| Scan capture triggering | |
-| Observation notes | |
+| Robot pilot | Reid |
+| RViz monitoring / screenshots | Reid |
+| Scan capture triggering | Reid |
+| Observation notes | Reid |
 
 ---
 
