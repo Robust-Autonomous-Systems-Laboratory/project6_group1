@@ -18,12 +18,14 @@
 Example:
     +------------------+
     |                  |
-    |   [P]            |  P = Pillar
     |                  |
-    |  1 ----> 2       |  1-5 = Waypoints
-    |          |       |  Arrows = Path
-    |          v       |
-    |  5 <---- 3 -> 4  |
+    |  | - 3 <-|       |  B = Bin
+    |  |       |       |
+    |  v       |       |
+    |  4   B   2       |  1-5 = Waypoints
+    |  |       ^       |  Arrows = Path
+    |  |       |       |
+    |  ----5-> 1       |
     |                  |
     +------------------+
          North Wall
@@ -33,8 +35,8 @@ Example:
 | ID | Landmark | Location | Notes |
 |----|----------|----------|-------|
 | A  | North wall | North side | Flat surface, good for distance measurement |
-| B  | Pillar | Center-left | Clear corner visible to LiDAR |
-| C  | ... | ... | ... |
+| B  | Recycle Bin | Center |  Part of it is prominent in all scans |
+| C  | East Wall | East side | Flat surface but not all of it may be visible at every wayppoint |
 
 ---
 
@@ -42,41 +44,36 @@ Example:
 
 ### Waypoint Layout
 
-| Waypoint | Position (x, y) | Landmark to Measure | Measurement Direction |
+| Waypoint | Position (x, y) (cm) | Landmark to Measure | Measurement Direction |
 |----------|-----------------|---------------------|----------------------|
-| 1 (Start)| (0.0, 0.0) | North wall | Straight ahead (0°) |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| 1 (Start)| (0, 0) | North wall, Recycle Bin | South (0°) |
+| 2 | (179, 0) | Recycle Bin | South (0°) |
+| 3 | (343, 174) | Recycle Bin | East (90°) |
+| 4 | (174, 285) | Recycle Bin | North (180°) |
+| 5 | (0, 131) | North wall, Recycle Bin | West (270°) |
 
 ### Path Statistics
-- Number of waypoints: 
-- Total path length: 
-- Loop closure planned: Yes / No
-- Estimated navigation time: 
+- Number of waypoints: 5
+- Total path length: 12.56m
+- Loop closure planned: Yes
+- Estimated navigation time: 30 min
 
 ---
 
 ## 3. Orientation Strategy
 
 ### Heading Reference System
-[Describe how you will define and track orientation]
+Orientation is in reference to the 1st waypoint where the robot is facing south. The rotaitons are then done counterclockwise from that orientation (S-E-N-W). The orientations are aligned based on the walls and are marked out by tape.
 
-Options:
-- [ ] Align robot parallel to a specific wall at each waypoint
-- [ ] Use floor tape lines to define heading
-- [ ] Use compass directions (if walls align N/S/E/W)
-- [ ] Other: _______________
 
 ### At Each Waypoint
 | Waypoint | Orientation Reference | Expected Landmark Direction |
 |----------|----------------------|----------------------------|
-| 1 | Parallel to south wall | North wall at 0° (ahead) |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | Prependicualar to North Wall facing South | North wall at 180° and recycle bin at roughly 60°|
+| 2 | Prependicualar to North Wall facing South | North wall at 180° and recycle bin at roughly 90°|
+| 3 | Parallel to North Wall facing East | Recycle bin at 90° | 
+| 4 | Perpendicular to North Wall facing North | Recycle bin at 90° and north wall at 0° |
+| 5 | Parallel to North Wall facing West | North wall at 270° and recycle bin at roughly 30°|
 
 ---
 
@@ -99,29 +96,29 @@ Options:
 7. [ ] Note any observations
 
 ### Measurement Technique
-- Measuring from: [LiDAR center / robot center / tape mark]
-- Measuring to: [Wall surface / corner point / pillar edge]
-- Tool: [Tape measure / laser measure]
-- Estimated measurement uncertainty: ± ___ m
+- Measuring from: tape mark
+- Measuring to: nearest landmark point
+- Tool: tape measure
+- Estimated measurement uncertainty: ± 0.2 m
 
 ---
 
 ## 5. Expected Challenges
 
 ### Localization Error Sources
-1. **Odometry drift**: [Expected impact, mitigation]
-2. **IMU bias**: [Expected impact, mitigation]
-3. **Wheel slip**: [Floor conditions]
+1. **Odometry drift**: Can cause errors with the localization system leading to misalinment between later wayporints.
+2. **IMU bias**: Similar to odometry drift, will compound and further cause more localization issue which will lead to misalignment as the robot travels.
+3. **Wheel slip**: Can cause error both with odometry and localization and also the physical travel of the robot.
 
 ### Mapping Challenges
-1. **Scan alignment**: [How might scans misalign?]
-2. **Landmark visibility**: [Any occlusion concerns?]
-3. **Environmental factors**: [People, lighting, reflections]
+1. **Scan alignment**: Scans will likely misalingn due to the issue mentioned above. If enough drift occurs, waypoints might misalign.
+2. **Landmark visibility**: Because the recycle bin is the center of the waypoints, there should be no issues capturing the landmark.
+3. **Environmental factors**: People moving around can objects in different places for the various scans.
 
 ### Mitigation Strategies
-- 
-- 
-- 
+- Wheel Slip - clean floors
+- Wheel Slip - avoid quick turns
+- Odemetry drift/IMU bias - use EKF to help mitigate drift
 
 ---
 
@@ -129,10 +126,10 @@ Options:
 
 | Task | Team Member |
 |------|-------------|
-| Robot pilot | |
-| RViz monitoring / screenshots | |
-| Scan capture triggering | |
-| Observation notes | |
+| Robot pilot | Reid |
+| RViz monitoring / screenshots | Reid |
+| Scan capture triggering | Reid |
+| Observation notes | Reid |
 
 ---
 
