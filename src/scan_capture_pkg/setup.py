@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'scan_capture_node = scan_capture_pkg.scan_capture_node:main',
+            'keyboard_capture = scan_capture_package.keyboard_capture:main'
         ],
     },
 )
