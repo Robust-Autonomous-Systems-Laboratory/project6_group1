@@ -9,14 +9,14 @@
 ## 1. Environment Description
 
 ### Location
-[Describe the room/area: dimensions, floor type, notable features]
+A rectangular indoor room approximately 5 m × 4 m. The floor is hard linoleum tile. The room has four well-defined flat walls with no large windows on the mapped sides. Some interior obstacles (chairs, small equipment) are present but were avoided during navigation. The south wall and east wall were the clearest, most unobstructed surfaces and served as the primary measurement landmarks.
 
 ### Environment Sketch
 ```
-[Draw ASCII sketch of environment with walls, landmarks, and planned waypoints]
-
-Example:
+        West Wall
     +------------------+
+    |        4         |
+    |   5         3    |
     |                  |
     |                  |
     |  | - 3 <-|       |  B = Bin
@@ -28,7 +28,12 @@ Example:
     |  ----5-> 1       |
     |                  |
     +------------------+
-         North Wall
+        South Wall       East Wall -->
+
+    1–5 = Waypoints
+    [obst] = Interior obstacles (chairs/equipment)
+    Robot started at WP1, facing north
+    Path: 1 → 2 → 3 → 4 → 5
 ```
 
 ### Identified Landmarks
@@ -80,20 +85,20 @@ Orientation is in reference to the 1st waypoint where the robot is facing south.
 ## 4. Measurement Protocol
 
 ### Before Data Collection
-- [ ] Mark all waypoints with tape
-- [ ] Measure waypoint positions from start
-- [ ] Identify measurement landmark at each waypoint
-- [ ] Measure distance to each landmark
-- [ ] Record all measurements in `config/measurements.yaml`
+- [x] Mark all waypoints with tape
+- [x] Measure waypoint positions from start
+- [x] Identify measurement landmark at each waypoint
+- [x] Measure distance to each landmark
+- [x] Record all measurements in `config/measurements.yaml`
 
 ### At Each Waypoint During Collection
-1. [ ] Stop robot completely at tape mark
-2. [ ] Align robot to planned orientation
-3. [ ] Wait 2 seconds for settling
-4. [ ] Verify landmark visible in RViz scan
-5. [ ] Capture scan with waypoint ID
-6. [ ] Take RViz screenshot
-7. [ ] Note any observations
+1. [x] Stop robot completely at tape mark
+2. [x] Align robot to planned orientation
+3. [x] Wait 2 seconds for settling
+4. [x] Verify landmark visible in RViz scan
+5. [x] Capture scan with waypoint ID
+6. [x] Take RViz screenshot
+7. [x] Note any observations
 
 ### Measurement Technique
 - Measuring from: tape mark
@@ -126,41 +131,41 @@ Orientation is in reference to the 1st waypoint where the robot is facing south.
 
 | Task | Team Member |
 |------|-------------|
-| Robot pilot | Reid |
-| RViz monitoring / screenshots | Reid |
-| Scan capture triggering | Reid |
-| Observation notes | Reid |
+| Robot pilot (teleop keyboard) | Reid Beckes |
+| RViz monitoring / screenshots | Progress Munoriarwa |
+| Scan capture triggering | Progress Munoriarwa |
+| Observation notes | Reid Beckes |
 
 ---
 
 ## 7. Post-Collection Analysis Plan
 
 ### Map Evaluation Steps
-1. [ ] Load all point clouds in RViz
-2. [ ] Verify scans appear in `odom` frame
-3. [ ] For each waypoint, measure distance to landmark using RViz Measure tool
-4. [ ] Record RViz measurements in `measurements.yaml`
-5. [ ] Compute errors (measured - RViz)
-6. [ ] Take screenshots showing measurements
-7. [ ] Assess orientation consistency at each waypoint
+1. [x] Load all point clouds in RViz via bag replay
+2. [x] Verify scans appear in `odom` frame
+3. [x] For each waypoint, measure distance to landmark using RViz Measure tool
+4. [x] Record RViz measurements in `measurements.yaml`
+5. [x] Compute errors (tape measure − RViz)
+6. [x] Take screenshots showing measurements
+7. [x] Assess orientation consistency at each waypoint
 
 ### Quality Checks
-- [ ] Do walls from different scans align?
-- [ ] Is loop closure consistent (if applicable)?
-- [ ] Are there any obvious mapping artifacts?
+- [x] Do walls from different scans align? — Partial. South/east walls align well; north/west walls show drift artifacts.
+- [ ] Is loop closure consistent? — No explicit loop closure was performed.
+- [x] Are there any obvious mapping artifacts? — Yes: south wall double-line at WP5, fragmented north wall at WP4.
 
 ---
 
 ## 8. Pre-Run Checklist
 
-- [ ] Robot battery charged
-- [ ] All waypoints marked with tape
-- [ ] All positions measured and recorded
-- [ ] All landmark distances measured and recorded
-- [ ] `measurements.yaml` filled with ground truth
-- [ ] Localization node tested
-- [ ] Scan capture service tested
-- [ ] RViz configured
-- [ ] Bag recording tested
-- [ ] Camera/screenshot tool ready
-- [ ] This strategy document complete
+- [x] Robot battery charged
+- [x] All waypoints marked with tape
+- [x] All positions measured and recorded
+- [x] All landmark distances measured and recorded
+- [x] `measurements.yaml` filled with ground truth
+- [ ] Localization node tested — odometry fallback used instead
+- [x] Scan capture service tested
+- [x] RViz configured
+- [x] Bag recording tested
+- [x] Camera/screenshot tool ready
+- [x] This strategy document complete
