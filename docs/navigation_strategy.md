@@ -18,9 +18,14 @@ A rectangular indoor room approximately 5 m × 4 m. The floor is hard linoleum t
     |        4         |
     |   5         3    |
     |                  |
-    |      [obst]      |
     |                  |
-    |   1         2    |
+    |  | - 3 <-|       |  B = Bin
+    |  |       |       |
+    |  v       |       |
+    |  4   B   2       |  1-5 = Waypoints
+    |  |       ^       |  Arrows = Path
+    |  |       |       |
+    |  ----5-> 1       |
     |                  |
     +------------------+
         South Wall       East Wall -->
@@ -34,10 +39,9 @@ A rectangular indoor room approximately 5 m × 4 m. The floor is hard linoleum t
 ### Identified Landmarks
 | ID | Landmark | Location | Notes |
 |----|----------|----------|-------|
-| A  | South wall | South side of room | Flat, unobstructed — primary reference at WP1/WP2 |
-| B  | East wall | East side of room | Flat, good visibility from WP2 and WP3 |
-| C  | North wall | North side of room | Visible from WP4; some fragmentation due to drift |
-| D  | West wall | West side of room | Visible from WP5; furthest from start |
+| A  | North wall | North side | Flat surface, good for distance measurement |
+| B  | Recycle Bin | Center |  Part of it is prominent in all scans |
+| C  | East Wall | East side | Flat surface but not all of it may be visible at every wayppoint |
 
 ---
 
@@ -45,38 +49,36 @@ A rectangular indoor room approximately 5 m × 4 m. The floor is hard linoleum t
 
 ### Waypoint Layout
 
-| Waypoint | Position (x, y) | Landmark to Measure | Measurement Direction |
+| Waypoint | Position (x, y) (cm) | Landmark to Measure | Measurement Direction |
 |----------|-----------------|---------------------|----------------------|
-| 1 (Start)| (0.0, 0.0) | South wall | Behind robot (180°) |
-| 2 | (1.5, 0.0) | East wall | Right of robot (270°) |
-| 3 | (1.5, 1.5) | East wall | Right of robot (270°) |
-| 4 | (0.5, 2.5) | North wall | Ahead of robot (0°) |
-| 5 | (0.0, 1.5) | West wall | Left of robot (90°) |
+| 1 (Start)| (0, 0) | North wall, Recycle Bin | South (0°) |
+| 2 | (179, 0) | Recycle Bin | South (0°) |
+| 3 | (343, 174) | Recycle Bin | East (90°) |
+| 4 | (174, 285) | Recycle Bin | North (180°) |
+| 5 | (0, 131) | North wall, Recycle Bin | West (270°) |
 
 ### Path Statistics
 - Number of waypoints: 5
-- Total path length: ~6.5 m
-- Loop closure planned: No (path ends near start but no explicit return)
-- Estimated navigation time: ~10–15 minutes including scan captures
+- Total path length: 12.56m
+- Loop closure planned: Yes
+- Estimated navigation time: 30 min
 
 ---
 
 ## 3. Orientation Strategy
 
 ### Heading Reference System
-At each waypoint, the robot was aligned parallel to the nearest wall using the room's grid geometry as a reference. Floor tape marks at each waypoint included a short directional arrow (~20 cm) indicating the intended forward heading. This ensured the robot's x-axis was consistently orthogonal or parallel to the wall being measured.
+Orientation is in reference to the 1st waypoint where the robot is facing south. The rotaitons are then done counterclockwise from that orientation (S-E-N-W). The orientations are aligned based on the walls and are marked out by tape.
 
-- [x] Align robot parallel to a specific wall at each waypoint
-- [x] Use floor tape lines to define heading
 
 ### At Each Waypoint
 | Waypoint | Orientation Reference | Expected Landmark Direction |
 |----------|----------------------|----------------------------|
-| 1 | Parallel to south wall, facing north | South wall directly behind (180°) |
-| 2 | Parallel to south wall, facing north | East wall to the right (270°) |
-| 3 | Parallel to east wall, facing north | East wall to the right (270°) |
-| 4 | Parallel to north wall, facing north | North wall directly ahead (0°) |
-| 5 | Parallel to west wall, facing east | West wall to the left (90°) |
+| 1 | Prependicualar to North Wall facing South | North wall at 180° and recycle bin at roughly 60°|
+| 2 | Prependicualar to North Wall facing South | North wall at 180° and recycle bin at roughly 90°|
+| 3 | Parallel to North Wall facing East | Recycle bin at 90° | 
+| 4 | Perpendicular to North Wall facing North | Recycle bin at 90° and north wall at 0° |
+| 5 | Parallel to North Wall facing West | North wall at 270° and recycle bin at roughly 30°|
 
 ---
 
@@ -99,30 +101,29 @@ At each waypoint, the robot was aligned parallel to the nearest wall using the r
 7. [x] Note any observations
 
 ### Measurement Technique
-- Measuring from: LiDAR center (approximately 10 cm forward of robot geometric center)
-- Measuring to: Wall surface (perpendicular distance)
-- Tool: Tape measure
-- Estimated measurement uncertainty: ± 0.02 m
+- Measuring from: tape mark
+- Measuring to: nearest landmark point
+- Tool: tape measure
+- Estimated measurement uncertainty: ± 0.2 m
 
 ---
 
 ## 5. Expected Challenges
 
 ### Localization Error Sources
-1. **Odometry drift**: Expected to accumulate over the ~6.5 m path. No EKF or UKF was used, so all pose estimates came from wheel encoder integration. Mitigation: minimize unnecessary turns, move slowly and steadily between waypoints.
-2. **IMU bias**: IMU data was available on `/imu` but not fused into the pose estimate for this run. Expected impact is primarily on heading accuracy during turns. Mitigation: align to wall markings at each waypoint rather than relying on odometry heading alone.
-3. **Wheel slip**: The linoleum floor has low but nonzero slip risk, particularly during in-place rotations. Mitigation: use slow rotation speed during heading corrections.
+1. **Odometry drift**: Can cause errors with the localization system leading to misalinment between later wayporints.
+2. **IMU bias**: Similar to odometry drift, will compound and further cause more localization issue which will lead to misalignment as the robot travels.
+3. **Wheel slip**: Can cause error both with odometry and localization and also the physical travel of the robot.
 
 ### Mapping Challenges
-1. **Scan alignment**: Without a global localization reference, scans from later waypoints will be placed using drifted odometry poses, causing walls to appear shifted or doubled in the overlay.
-2. **Landmark visibility**: Interior obstacles (chairs, small equipment) are partially visible in the LiDAR scan and could obscure wall surfaces at some angles. Waypoints were positioned to minimize this.
-3. **Environmental factors**: The room is an active lab space. We collected data during a low-traffic period to reduce moving-person detections in the scan.
+1. **Scan alignment**: Scans will likely misalingn due to the issue mentioned above. If enough drift occurs, waypoints might misalign.
+2. **Landmark visibility**: Because the recycle bin is the center of the waypoints, there should be no issues capturing the landmark.
+3. **Environmental factors**: People moving around can objects in different places for the various scans.
 
 ### Mitigation Strategies
-- Slow, deliberate navigation between waypoints to minimize wheel slip
-- 2-second pause before each capture to allow scan to stabilize
-- Tape arrows at each waypoint for consistent heading alignment
-- Chose wall landmarks (rather than furniture) for reliable, repeatable measurements
+- Wheel Slip - clean floors
+- Wheel Slip - avoid quick turns
+- Odemetry drift/IMU bias - use EKF to help mitigate drift
 
 ---
 
