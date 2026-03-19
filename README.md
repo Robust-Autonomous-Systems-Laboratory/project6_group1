@@ -2,8 +2,8 @@
 
 # EE5531 Introduction to Robotics
 
-# 1. Navigation Strategy Summary (5 pts)
-## Environment sketch with waypoints and landmarks
+## 1. Navigation Strategy Summary (5 pts)
+### Environment sketch with waypoints and landmarks
 ```
     +------------------+
     |                  |
@@ -23,8 +23,8 @@ The mapping experiment was conducted in an indoor environment with clearly defin
 
 To maintain orientation consistency, the robot’s heading was defined relative to the initial pose (facing south at waypoint 1), with subsequent orientations aligned using walls and floor tape as references. At each waypoint, the robot was carefully positioned, aligned, and stabilized before capturing scans to minimize motion-induced errors. Measurements were taken using a tape measure with an estimated uncertainty of ±0.2 m and later compared against RViz measurements. Potential challenges such as odometry drift, IMU bias, and wheel slip were mitigated using EKF-based localization and controlled robot motion, ensuring more accurate scan alignment and improved overall map quality.
 
-# 2. System Architecture (5 pts)
-## Data flow diagram
+## 2. System Architecture (5 pts)
+### Data flow diagram
 
 ```
 TurtleBot3 Hardware
@@ -50,13 +50,13 @@ TurtleBot3 Hardware
     └── All point clouds overlaid for map evaluation
 ```
 
-## Localization Configuration (EKF/UKF configuration summary)
+### Localization Configuration (EKF/UKF configuration summary)
 
 No external localization node was available during data collection. The `scan_capture_node` fell back to odometry poses sourced from the `/odom` topic. Pose estimates are therefore subject to wheel encoder drift with no correction mechanism — this is the primary source of error in the final map.
 
 Dead reckoning from odometry accumulates error proportional to distance traveled. Over the ~4 m total path in this run, we observed moderate positional drift by the final waypoint, consistent with typical encoder-based odometry on the TurtleBot3 Burger (wheel slip, floor irregularities, minor IMU misalignment).
 
-## Project 5 Sensor Characterization Integration
+### Project 5 Sensor Characterization Integration
 
 Project 5 sensor characterization can be incorporated into the mapping pipeline by using the LiDAR beam model to account for measurement noise and uncertainty during scan processing. Instead of treating all laser measurements equally, each beam can be filtered and weighted based on its expected noise characteristics such as 𝜎 hit and measurement bias. This allows us to reject outliers, reduce the impact of noisy readings, and generate more reliable point clouds at each waypoint. As a result, mapped features such as walls and corners become more consistent and less affected by erroneous measurements.
 
