@@ -63,13 +63,20 @@ Project 5 sensor characterization can be incorporated into the mapping pipeline 
 Additionally, the sensor characterization can be integrated into the localization pipeline by properly tuning the measurement covariance matrix in the EKF/UKF using real LiDAR noise parameters. This improves pose estimation accuracy and reduces drift, which directly enhances scan alignment across waypoints. Overall, incorporating the beam model leads to improved map accuracy, fewer artifacts such as ghosting or misalignment, and a more robust, uncertainty-aware mapping process compared to a purely geometric approach we used.
 
 
-## 3. Map Accuracy Results (15 pts)
-- Distance accuracy table (all waypoints)
-- Orientation assessment for each waypoint
-- RViz screenshots showing:
-  - Individual scan captures at each waypoint
-  - Measurement tool usage
-  - Overall map with all scans visualized
+## 3. Map Accuracy Results
+![Final Map](figures/rviz_screenshots/map.png)
+
+|Waypoint|Landmark   |Measured Distance (m)|Rviz Distance (m)|Error| Error %|
+|:------:|:---------:|:-------------------:|:---------------:|:---:|:------:|
+|    1   |North Wall |                     |                 |     |        |
+|    1   |Recycle Bin|                     |                 |     |        |
+|    2   |Recycle Bin|                     |                 |     |        |
+|        |Recycle Bin|                     |                 |     |        |
+|    4   |Recycle Bin|                     |                 |     |        |
+|    5   |North Wall |                     |                 |     |        |
+|    5   |Recycle Bin|                     |                 |     |        |
+
+
 
 ## 4. Discussion (10 pts)
 - Analysis of mapping accuracy
@@ -77,14 +84,39 @@ Additionally, the sensor characterization can be integrated into the localizatio
 - Map consistency assessment
 - Recommendations for improvement
 
-## 5. Usage Instructions (5 pts)
-- How to launch your localization node
-- How to run the scan capture system
-- How to visualize the captured map
+## 5. Usage Instructions
+### Build Packages
+1. Create a new ROS workspace and clone this repository into its src folder
+2. Build the package
+```
+colcon build
+```
+3. Source the workspace
+```
+source install/setup.bash
+```
+### Capturing Data
+The service can be manually called with the following:
+```
+ros2 service call /scan_capture/capture src/interface_pkg/srv/CaptureScan "{waypoint_id: 1, description: 'test'}"
+```
+Captures can also be taken with the included keyboard_capture package
+```
+ros2 run scan_capture_pkg keyboard_capture
+# Press 1-9 for waypoint ID, or 's' for auto-increment
+```
+Rosbags can be recorded using typical ROS commands.
 
-### Code and Data (15 pts)
-- **Scan capture service implementation** (10 pts): `scan_capture_node.py` fully implemented — parameters, subscribers, publisher, service handler, scan-to-point-cloud conversion, and file saving all working correctly
-- Completed `measurements.yaml` with ground truth and results (3 pts)
-- Bag file from your mapping run and git history with contributions from both team members (2 pts)
+### Replaying Data
+When replaying rosbags from this node, if transforms were not recorded, you must use the incuded transform pakage. To replay rosbags, follow the steps below.
+1. Run the transform node
+```
+ros2 run scan_capture_pkg transform_node
+```
+2. Open a new window and run the rviz config
+```
+rviz2 -d src/scan_capture_pkg/config/mapping.rviz
+```
+3. Open another terminal tand play the rosbag. Make sure to use the `--clock` parameter.
 
 ---
