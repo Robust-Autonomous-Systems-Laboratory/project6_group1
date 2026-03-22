@@ -68,21 +68,17 @@ Additionally, the sensor characterization can be integrated into the localizatio
 
 |Waypoint|Landmark   |Measured Distance (m)|Rviz Distance (m)|Error| Error %|
 |:------:|:---------:|:-------------------:|:---------------:|:---:|:------:|
-|    1   |North Wall |                     |                 |     |        |
-|    1   |Recycle Bin|                     |                 |     |        |
-|    2   |Recycle Bin|                     |                 |     |        |
-|        |Recycle Bin|                     |                 |     |        |
-|    4   |Recycle Bin|                     |                 |     |        |
-|    5   |North Wall |                     |                 |     |        |
-|    5   |Recycle Bin|                     |                 |     |        |
+|    1   |North Wall |        1.39         |      1.41       | 0.02|  1.4  |
+|    1   |Recycle Bin|        2.22         |      2.16       | 0.06|  2.7  |
+|    2   |Recycle Bin|        1.62         |      1.57       | 0.05|   3   |
+|    3   |Recycle Bin|        1.44         |      1.36       | 0.08|  5.6  |
+|    4   |Recycle Bin|        0.96         |      0.96       | 0.00|   0   |
+|    5   |North Wall |        1.39         |      1.45       | 0.06|   4.3 |
+|    5   |Recycle Bin|        1.61         |      1.53       | 0.08|   5   |
 
+Based on the measurement table, you could assume that the map accruarcy was actually okay for 5 waypoints and a single channel lidar. While the first four waypoints line up with some marginal drift in the visualization, the last one has some dramatic shift. This is due to the slip experienced when traveling to the last waypoint. There was a patch of floor where the robot got stuck and was unable to move despite the wheel's moving. This caused a point of extreme odometry drift as the robot thought it moved without actuaaly travelling. This combined with the broken localization node meant this drift would be reflected in the final map. This drift error can be seen in on the north side (bottom) of the recycle bin in the map (rectangle in center of path). The actual distances between the waypoints and landmarks did have some errors but the drift had little effect on them.
 
-
-## 4. Discussion (10 pts)
-- Analysis of mapping accuracy
-- Sources of error (localization, measurement, sensor)
-- Map consistency assessment
-- Recommendations for improvement
+The first way to improve this map would to be to clean the floors and robot before use. While a light sweep was preformed, we stiil experienced wheel slip. The second improvement would be to pre-program a path for the robot to take. The throttle controls are not the most intuitive to use to direct the robot. Having a pre-planned path that can be tested will allow to the robot to hit each waypoint percisely where it needs to be. The third improvement would be to include a robust localization system. The localization system we used did not properly work during out data collection. With a proper localization system, the robot would be able to better correct for errors incurred from drift.
 
 ## 5. Usage Instructions
 ### Build Packages
